@@ -7,7 +7,6 @@ from desc.truth_reorg.truth_reorg_utils import connect_read
 # Note: this code must be run in lsst_distrib environment for lsst.sphgeom
 
 '''
-
 File to be trimmed
 Names of ra, dec columns (default to 'ra', 'dec')
 Path for output file
@@ -82,10 +81,6 @@ class Trimmer:
                 mask_chunks.append(self._region.contains(ra, dec))
                 i_chunk += 1
 
-                # rows = cur.fetchall()
-                # ra, dec = zip(*rows)
-                # mask_full = self._region.contains(ra, dec)
-
         read_conn = connect_read(self._ifile)
         read_cur = read_conn.cursor()
         read_cur.arraysize=chunksize
@@ -107,7 +102,6 @@ class Trimmer:
                     break
             if i_chunk >= len(mask_chunks):
                 break
-            #mask_chunk = mask_full[lower : lower+chunksize]
             mask_chunk = mask_chunks[i_chunk]
             done = self._do_chunk(read_cur, mask_chunk)
             lower += chunksize

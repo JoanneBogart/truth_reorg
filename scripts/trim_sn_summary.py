@@ -131,12 +131,6 @@ class TrimSnSummary:
         cur_write = conn_write.cursor()
         create_table_sql = self.assemble_create_table(self._INITIAL_TABLE,
                                                       self._INIT_COLUMNS)
-
-        # '''
-        #   create table initial_summary (id TEXT, host_galaxy BIGINT,
-        #    ra DOUBLE, dec DOUBLE, redshift FLOAT,
-        #    mB FLOAT, t0 FLOAT, x0 FLOAT, x1 FLOAT)
-        # '''
         cur_write.execute(create_table_sql)
 
         big_select = '''

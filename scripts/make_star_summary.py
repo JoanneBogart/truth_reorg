@@ -22,12 +22,11 @@ The following need to happen:
 * read in columns of interest from the inputs.
   - From the summary table, need only
     id, ra, dec, flux_<band>.  Don't need is_variable
-    because we're going to recalculate it
+    because we're going to include the more useful above_threshold instead
   - From LC stats need model and stdev_<band>
 * use them all in the new table except from set stdev_<band> store only max
 * convert id field to int
 * add Av, Rv as was done for SNe
-
 '''
 
 __all__ = ['StarSummaryWriter']
@@ -95,9 +94,7 @@ class StarSummaryWriter:
         # so try this
         above_threshold = [int(m) for m in above_np]
         av, rv = get_MW_AvRv(self._ebv_model, ra, dec)
-        #to_int_v = np.vectorize(self.to_int, [int])
 
-        #id_int = tuple(to_int_v(id_text))
         id_int = [int(i_t) for i_t in id_text]
 
         to_write = list(zip(id_int, ra, dec,
@@ -105,13 +102,9 @@ class StarSummaryWriter:
                             model, max_mag, above_threshold, av, rv))
 
         self._out_conn.cursor().executemany(self._INSERT, to_write)
-
         self._out_conn.commit()
 
         return False
-
-
-
 
     def create(self, out_file=_OUT, chunksize=20000, max_chunk=None):
         self._outfile = out_file

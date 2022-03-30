@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import sqlite3
-##import astropy.units as u  # Only needed for trim script
 
 from lsst.sims.catUtils.dust import EBVbase
 '''

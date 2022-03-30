@@ -2,7 +2,6 @@ import numpy as np
 
 __all__ = ['get_MW_AvRv']
 
-
 def get_MW_AvRv(ebv_model, ra, dec, Rv=3.1):
     '''
     Copied from
