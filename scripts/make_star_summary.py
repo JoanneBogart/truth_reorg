@@ -6,8 +6,9 @@ import sqlite3
 # an environment where old lsst-sims is available
 from lsst.sims.catUtils.dust import EBVbase
 
-from desc.truth_reorg.truth_reorg_utils import assemble_create_table, get_MW_AvRv
-from desc.truth_reorg.truth_reorg_utils import connect_read
+from desc.truth_reorg.truth_reorg_utils import assemble_create_table,connect_read
+
+from desc.truth_reorg.oldsim_utils import  get_MW_AvRv
 
 '''
 Inputs:
@@ -50,6 +51,7 @@ class StarSummaryWriter:
                     ('flux_r', 'FLOAT'), ('flux_i', 'FLOAT'),
                     ('flux_z', 'FLOAT'), ('flux_y', 'FLOAT'),
                     ('model', 'TEXT'), ('max_stdev_delta_mag', 'FLOAT'),
+                    ('above_threshold', 'INT'),
                     ('av', 'FLOAT'), ('rv', 'FLOAT')]
     _SUMM_COLUMNS = ('id', 'ra', 'dec', 'flux_u', 'flux_g', 'flux_r',
                      'flux_i', 'flux_z', 'flux_y')
@@ -57,7 +59,9 @@ class StarSummaryWriter:
                          'stdev_i', 'stdev_z', 'stdev_y')
 
     _INSERT = 'insert into ' + _OUT_TABLE +  ''' VALUES
-       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+
+    _DMAG_THRESHOLD = 0.001
 
     def __init__(self, old_summary=_OLD_SUMMARY, lc_stats=_LC_STATS):
         self._old_summary = old_summary
@@ -83,14 +87,22 @@ class StarSummaryWriter:
         model, stdev_u, stdev_g, stdev_r, stdev_i, stdev_z, stdev_y = zip(*lc_rows)
         max_mag = np.amax(np.array([stdev_u, stdev_g, stdev_r, stdev_i,
                                     stdev_z, stdev_y]), axis=0)
+        # convert boolean to int (actually first np.int64)
+        # Following does not play nicely with sqlite.  It doesn't seem to
+        # know what to do with np.int64
+        above_np = np.multiply(max_mag > self._DMAG_THRESHOLD, 1)
+
+        # so try this
+        above_threshold = [int(m) for m in above_np]
         av, rv = get_MW_AvRv(self._ebv_model, ra, dec)
         #to_int_v = np.vectorize(self.to_int, [int])
 
         #id_int = tuple(to_int_v(id_text))
         id_int = [int(i_t) for i_t in id_text]
 
-        to_write = list(zip(id_int, ra, dec, flux_u, flux_g, flux_r, flux_i,
-                            flux_z, flux_y, model, max_mag, av, rv))
+        to_write = list(zip(id_int, ra, dec,
+                            flux_u, flux_g, flux_r, flux_i, flux_z, flux_y,
+                            model, max_mag, above_threshold, av, rv))
 
         self._out_conn.cursor().executemany(self._INSERT, to_write)
 
@@ -144,8 +156,10 @@ class StarSummaryWriter:
         self._out_conn.close()
 
 if __name__ == '__main__':
-    out_file = os.path.join(_STAR_DIR, 'truth_star_summary.db')
+    #out_file = os.path.join(_STAR_DIR, 'truth_star_summary_test_v1.db') # TEST
+    out_file = os.path.join(_STAR_DIR, 'truth_star_summary_v2.db')
 
     writer = StarSummaryWriter()
 
+    #writer.create(out_file=out_file, chunksize=10000, max_chunk=3) # TEST
     writer.create(out_file=out_file, chunksize=50000)
