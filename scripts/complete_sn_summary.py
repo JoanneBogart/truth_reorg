@@ -16,9 +16,9 @@ complete_sn_summary must run in a DC2-era lsst_sims environment. It will
 '''
 
 _INIT_COLUMNS = [('id', 'TEXT'), ('host_galaxy', 'BIGINT'),
-                 ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'FLOAT'),
-                 ('mB', 'FLOAT'), ('t0', 'FLOAT'),
-                 ('x0', 'FLOAT'), ('x1', 'FLOAT')]
+                 ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'DOUBLE'),
+                 ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
+                 ('x0', 'DOUBLE'), ('x1', 'DOUBLE')]
 _ADD_COLUMNS = [('id_int', 'BIGINT'), ('av', 'FLOAT'), ('rv', 'FLOAT'),
                 ('max_flux_u', 'FLOAT'),('max_flux_g', 'FLOAT'),
                 ('max_flux_r', 'FLOAT'),('max_flux_i', 'FLOAT'),
@@ -145,11 +145,11 @@ class SnSummaryWriter:
 
         id_list, host, ra, dec, c5, c6, c7, c8, c9 = zip(*rows)
 
-        Av, rv = SnSummaryWriter.get_MW_AvRv(ra, dec)
+        Av, rv = self.get_MW_AvRv(ra, dec)
         Rv = np.full((len(Av),), rv)
-        id_int = [SnSummaryWriter.make_int_id(h) for h in host]
+        id_int = [self.make_int_id(h) for h in host]
 
-        max_deltas = [SnSummaryWriter.get_max_fluxes(self._conn_var, id) for id in id_list]
+        max_deltas = [self.get_max_fluxes(self._conn_var, id) for id in id_list]
         u, g, r, i, z, y = zip(*max_deltas)
         to_write = list(zip(id_list, host, ra, dec, c5, c6, c7, c8, c9,
                             id_int, Av, Rv, u, g, r, i, z, y))

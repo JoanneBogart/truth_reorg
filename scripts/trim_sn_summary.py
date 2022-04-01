@@ -81,9 +81,9 @@ class TrimSnSummary:
         self._sn_params = sn_params
 
     _INIT_COLUMNS = [('id', 'TEXT'), ('host_galaxy', 'BIGINT'),
-                     ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'FLOAT'),
-                     ('mB', 'FLOAT'), ('t0', 'FLOAT'),
-                     ('x0', 'FLOAT'), ('x1', 'FLOAT')]
+                     ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'DOUBLE'),
+                     ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
+                     ('x0', 'DOUBLE'), ('x1', 'DOUBLE')]
     _ADD_COLUMNS = [('id_int', 'BIGINT'), ('av', 'FLOAT'), ('rv', 'FLOAT'),
                     ('max_delta_flux_u', 'FLOAT'),('max_delta_flux_g', 'FLOAT'),
                     ('max_delta_flux_r', 'FLOAT'),('max_delta_flux_i', 'FLOAT'),
