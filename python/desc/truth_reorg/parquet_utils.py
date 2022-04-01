@@ -7,7 +7,8 @@ import numpy as np
 import pandas as pd
 import sqlite3
 
-from desc.export_sqlite.script_utils import print_callinfo
+from desc.truth_reorg.script_utils import print_callinfo
+from desc.truth_reorg.truth_reorg_utils import connect_read
 
 __all__ = ["convert_sqlite_to_parquet", "compare_sqlite_parquet"]
 def  _transpose(records, column_dict, schema, n_rec=None, verbose=False,
@@ -26,13 +27,14 @@ def  _transpose(records, column_dict, schema, n_rec=None, verbose=False,
         for i in range(ic):
             if ir == 0:
                 print(f'For column {i} type of records[ir][i]: {type(records[ir][i])}')
-            if (i == 0) and force_id:  #### TEMP! Don't leave this here!!
-                val = int(records[ir][i])
-                if ir == 0:
-                    print(f'val is {val}; type is {type(val)}')
-                dat[i].append(int(records[ir][i]))
-            else:
-                dat[i].append(records[ir][i])
+            # if (i == 0) and force_id:  #### TEMP! Don't leave this here!!
+            #     val = int(records[ir][i])
+            #     if ir == 0:
+            #         print(f'val is {val}; type is {type(val)}')
+            #     dat[i].append(int(records[ir][i]))
+            # else:
+            #     dat[i].append(records[ir][i])
+            dat[i].append(records[ir][i])
 
     if verbose:
         print("Type of data ", type(dat))
@@ -68,7 +70,8 @@ def convert_sqlite_to_parquet(dbfile, pqfile, table,
     ng = max(min_groups, n_group)
 
     column_dict = {}
-    with sqlite3.connect(dbfile) as conn:
+    #with sqlite3.connect(dbfile) as conn:
+    with connect_read(dbfile) as conn:
         cursor = conn.cursor()
         cmd = 'select count(*) from ' + table
         res = cursor.execute(cmd)
@@ -83,10 +86,13 @@ def convert_sqlite_to_parquet(dbfile, pqfile, table,
         meta_res = cursor.execute('PRAGMA table_info({})'.format(table))
         column_dict = {t[1]: t[2] for t in meta_res.fetchall()}
 
-        type_translate = {'BIGINT' : 'int64', 'INT' : 'int32', 'INTEGER' : 'int32',
-                          'FLOAT' : 'float32', 'DOUBLE' : 'float64', 'TEXT' : 'string'}
+        type_translate = {'BIGINT' : 'int64', 'INT' : 'int32',
+                          'INTEGER' : 'int32',
+                          'FLOAT' : 'float32', 'DOUBLE' : 'float64',
+                          'TEXT' : 'string'}
         type_pa = {'int64' : pa.int64(), 'int32' : pa.int32(),
-                   'float32': pa.float32(), 'float64' : pa.float64(), 'string' : pa.string()}
+                   'float32': pa.float32(), 'float64' : pa.float64(),
+                   'string' : pa.string()}
 
         for (k,v) in column_dict.items():
             if v in type_translate.keys():
@@ -94,7 +100,7 @@ def convert_sqlite_to_parquet(dbfile, pqfile, table,
                 # Override in case MJD column is mislabeled as FLOAT
                 if k == 'MJD':
                     column_dict[k] = 'float64'
-                # Override for star files only to set id to float64
+                # Override for star files only to set id to int64
                 if k == 'id' and 'star' in dbfile:
                     column_dict[k] = 'int64'
             else:
@@ -137,7 +143,9 @@ def convert_sqlite_to_parquet(dbfile, pqfile, table,
                 if len(records) == 0:
                     done = True
                     break
-                to_write = _transpose(records, column_dict, schema, verbose=verbose, force_id=True)
+                to_write = _transpose(records, column_dict, schema,
+                                      verbose=verbose)
+                                      ###verbose=verbose, force_id=True)
                 writer.write_table(to_write)
                 if len(records) < row_per_group:
                     done = True
@@ -162,8 +170,10 @@ def compare_sqlite_parquet(sqlite_file, parquet_file, sqlite_table,
     sqlite_file     string    path to sqlite file
     parquet_file    string    path to parquet file
     sqlite_table    string    sqlite table name
-    id_column       string    If not none, a unique id which exists in both tables
-    n_rows          int       If there is an id_column, number of rows to compare directly;
+    id_column       string    If not none, a unique id which exists in
+                              both tables
+    n_rows          int       If there is an id_column, number of rows to
+                              compare directly;
                               else ignored
     check_cols      list      compare values for these columns
 
@@ -175,7 +185,8 @@ def compare_sqlite_parquet(sqlite_file, parquet_file, sqlite_table,
 
     # Make sure we can connect to both files
     try:
-        sq_conn = sqlite3.connect(sqlite_file)
+        #sq_conn = sqlite3.connect(sqlite_file)
+        sq_conn = connect_read(sqlite_file)
     except Exception as ex:
         warnings.warn('Failed to connect to sqlite file with error {}'.format(str(ex)))
         return False
@@ -195,8 +206,8 @@ def compare_sqlite_parquet(sqlite_file, parquet_file, sqlite_table,
 
     if verbose: print('Opened parquet file')
 
-    # Check that schemas are compatible (i.e., column names match.  Ideally should
-    # also check types are compatible)
+    # Check that schemas are compatible (i.e., column names match.  Ideally
+    # should also check types are compatible)
     pq_lst = []
     if verbose: print(pq_file.schema)
     for i in range(len(pq_file.schema)):
@@ -230,8 +241,8 @@ def compare_sqlite_parquet(sqlite_file, parquet_file, sqlite_table,
                                                                        pq_file.metadata.num_rows))
         return False
 
-    # If there is an id_colum    read in first n_rows from sqlite file
-    #     and for each row  attempt to select the 'same' rows from parquet; compare
+    # If there is an id_colum    read in first n_rows from sqlite file and
+    # for each row  attempt to select the 'same' rows from parquet; compare
 
     if id_column is not None:
         sq_query = 'select * from {sqlite_table} limit {n_rows}'.format(**locals())
@@ -286,6 +297,7 @@ if __name__ == "__main__":
                                   order_by = 'rowid', verbose=args.verbose)
     else:
         ok = compare_sqlite_parquet(args.dbfile, args.pqfile, args.table,
-                                    id_column=args.id_column, verbose=args.verbose,
+                                    id_column=args.id_column,
+                                    verbose=args.verbose,
                                     check_cols=args.n_check)
         if ok: print('Comparison succeeded')
