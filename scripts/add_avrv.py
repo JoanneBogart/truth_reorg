@@ -77,7 +77,7 @@ class AugmentAvRv():
                 if dry_run:
                     print('Found match: ', f)
                 else:
-                    self.process_file(f, ra, dec, dry_run=dry_run)
+                    self.process_file(f, ra=ra, dec=dec, dry_run=dry_run)
 
 
 def hp_to_filename(hp):
