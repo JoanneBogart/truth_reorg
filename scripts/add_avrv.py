@@ -1,4 +1,5 @@
 import os
+import re
 from collections import namedtuple
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -26,7 +27,10 @@ class AugmentAvRv():
         self._output_dir = output_dir
         self._ebv_model = EBVbase()
 
-    def process_file(self, infilename, outfilename=None, ra='ra', dec='dec'):
+        self._file_pattern = re.compile('truth_summary_hp\d+.parquet')
+
+    def process_file(self, infilename, outfilename=None, ra='ra', dec='dec',
+                     dry_run=False):
         if not outfilename:
             outfilename = infilename
 
@@ -47,7 +51,8 @@ class AugmentAvRv():
             out_schema = out_schema.append_field(av_field)
             out_schema = out_schema.append_field(rv_field)
 
-        self._pq_out = pq.ParquetWriter(outpath, out_schema)
+        if not dry_run:
+            self._pq_out = pq.ParquetWriter(outpath, out_schema)
         num_row_groups = self._pq_in.metadata.num_row_groups
 
         for i in range(num_row_groups):
@@ -58,7 +63,22 @@ class AugmentAvRv():
 
             tbl = tbl.append_column(av_field, av_l)
             tbl = tbl.append_column(rv_field, rv_l)
-            self._pq_out.write_table(tbl)
+            if not dry_run:
+                self._pq_out.write_table(tbl)
+
+    def process_all(self, ra='ra', dec='dec', dry_run=False):
+        '''
+        Process all suitable files in the input directory. Each output file
+        will have the same basename as corresponding input file
+        '''
+        files = os.listdir(self._input_dir)
+        for f in files:
+            if self._file_pattern.match(f):
+                if dry_run:
+                    print('Found match: ', f)
+                else:
+                    self.process_file(f, ra, dec, dry_run=dry_run)
+
 
 def hp_to_filename(hp):
     '''
@@ -79,7 +99,9 @@ if __name__ == '__main__':
     parser.add_argument('--dec-name', default='dec',
                         help='name of declination column, default="dec"')
     parser.add_argument('--pixels', type=int, nargs='*', default=[9556],
-                        help='healpix pixels for which augmented files will be created')
+                        help='healpix pixels for which augmented files will be created. If option is included with no value all suitable files in the directory wil be processed.')
+    parser.add_argument('--dry-run', action='store_true',
+                        help='If used, go through the motions without creating any files')
 
 
     args = parser.parse_args()
@@ -88,8 +110,15 @@ if __name__ == '__main__':
     augment = AugmentAvRv(input_dir = args.input_dir,
                           output_dir=args.output_dir)
 
-    for hp in args.pixels:
-        print_date(msg=f'Starting pixel {hp}')
-        augment.process_file(hp_to_filename(hp), ra=args.ra_name,
-                             dec=args.dec_name)
-        print_date(msg=f'Finishing pixel {hp}')
+    if (len(args.pixels) > 0):
+        for hp in args.pixels:
+            print_date(msg=f'Starting pixel {hp}')
+            augment.process_file(hp_to_filename(hp), ra=args.ra_name,
+                                 dec=args.dec_name, dry_run=args.dry_run)
+            print_date(msg=f'Finishing pixel {hp}')
+
+    else:
+        print_date(msg=f'Processing all suitable files in directory {args.input_dir}')
+        augment.process_all(ra=args.ra_name, dec=args.dec_name,
+                            dry_run=args.dry_run)
+        print_date(msg='Processing complete')
