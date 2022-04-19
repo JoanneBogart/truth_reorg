@@ -73,7 +73,7 @@ class TrimSnSummary:
     truth_sn_summary.   As compared to old truth_summary it
         * Excludes SNe outside footprint or belonging to Run3.1i
         * Eliminates is_pointsource, is_variable, and flux columns
-        * Adds some columns from sn params: mB, t0, x0, x1
+        * Adds some columns from sn params: mB, c, t0, x0, x1
 '''
     def __init__(self, region, old_sn_summary, sn_params):
         self._region = region
@@ -82,7 +82,7 @@ class TrimSnSummary:
 
     _INIT_COLUMNS = [('id', 'TEXT'), ('host_galaxy', 'BIGINT'),
                      ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'DOUBLE'),
-                     ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
+                     ('c', 'DOUBLE'), ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
                      ('x0', 'DOUBLE'), ('x1', 'DOUBLE')]
     _ADD_COLUMNS = [('id_int', 'BIGINT'), ('av', 'FLOAT'), ('rv', 'FLOAT'),
                     ('max_delta_flux_u', 'FLOAT'),('max_delta_flux_g', 'FLOAT'),
@@ -135,12 +135,12 @@ class TrimSnSummary:
 
         big_select = '''
         select id, host_galaxy, ra, dec, redshift,
-        mB, t0_in as t0, x0_in as x0, x1_in as x1
+        c_in as c, mB, t0_in as t0, x0_in as x0, x1_in as x1
         from truth_summary join params.sne_params
         on truth_summary.rowid = params.sne_params.rowid
         order by truth_summary.rowid'''
         ins = '''
-        insert into initial_summary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        insert into initial_summary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         '''
         cur.execute(big_select)
 

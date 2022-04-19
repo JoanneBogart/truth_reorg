@@ -17,7 +17,7 @@ complete_sn_summary must run in a DC2-era lsst_sims environment. It will
 
 _INIT_COLUMNS = [('id', 'TEXT'), ('host_galaxy', 'BIGINT'),
                  ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'DOUBLE'),
-                 ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
+                 ('c', 'DOUBLE'), ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
                  ('x0', 'DOUBLE'), ('x1', 'DOUBLE')]
 _ADD_COLUMNS = [('id_int', 'BIGINT'), ('av', 'FLOAT'), ('rv', 'FLOAT'),
                 ('max_flux_u', 'FLOAT'),('max_flux_g', 'FLOAT'),
@@ -102,7 +102,7 @@ class SnSummaryWriter:
     from sn_variability_truth where id=? group by bandpass'''
 
     _INSERT = 'insert into ' + _OUT_TABLE +  ''' VALUES
-       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
 
     @staticmethod
     def get_max_fluxes(conn, id):
