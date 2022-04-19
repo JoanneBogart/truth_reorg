@@ -143,7 +143,7 @@ class SnSummaryWriter:
         if len(rows) == 0:
             return True
 
-        id_list, host, ra, dec, c5, c6, c7, c8, c9 = zip(*rows)
+        id_list, host, ra, dec, c5, c6, c7, c8, c9, c10 = zip(*rows)
 
         Av, rv = self.get_MW_AvRv(ra, dec)
         Rv = np.full((len(Av),), rv)
@@ -151,7 +151,7 @@ class SnSummaryWriter:
 
         max_deltas = [self.get_max_fluxes(self._conn_var, id) for id in id_list]
         u, g, r, i, z, y = zip(*max_deltas)
-        to_write = list(zip(id_list, host, ra, dec, c5, c6, c7, c8, c9,
+        to_write = list(zip(id_list, host, ra, dec, c5, c6, c7, c8, c9, c10,
                             id_int, Av, Rv, u, g, r, i, z, y))
 
         self._conn_out.cursor().executemany(self._INSERT, to_write)
