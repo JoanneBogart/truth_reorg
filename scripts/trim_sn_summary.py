@@ -80,14 +80,11 @@ class TrimSnSummary:
         self._old_summary = old_sn_summary
         self._sn_params = sn_params
 
-    _INIT_COLUMNS = [('id', 'TEXT'), ('host_galaxy', 'BIGINT'),
+    _INIT_COLUMNS = [('id_string', 'TEXT'), ('host_galaxy', 'BIGINT'),
                      ('ra', 'DOUBLE'), ('dec', 'DOUBLE'), ('redshift', 'DOUBLE'),
                      ('c', 'DOUBLE'), ('mB', 'DOUBLE'), ('t0', 'DOUBLE'),
                      ('x0', 'DOUBLE'), ('x1', 'DOUBLE')]
-    _ADD_COLUMNS = [('id_int', 'BIGINT'), ('av', 'FLOAT'), ('rv', 'FLOAT'),
-                    ('max_delta_flux_u', 'FLOAT'),('max_delta_flux_g', 'FLOAT'),
-                    ('max_delta_flux_r', 'FLOAT'),('max_delta_flux_i', 'FLOAT'),
-                    ('max_delta_flux_z', 'FLOAT'),('max_delta_flux_y', 'FLOAT')]
+
     _INITIAL_TABLE = 'initial_summary'
     _FINAL_TABLE = 'truth_sn_summary'
 
@@ -134,7 +131,7 @@ class TrimSnSummary:
         cur_write.execute(create_table_sql)
 
         big_select = '''
-        select id, host_galaxy, ra, dec, redshift,
+        select id as id_string, host_galaxy, ra, dec, redshift,
         c_in as c, mB, t0_in as t0, x0_in as x0, x1_in as x1
         from truth_summary join params.sne_params
         on truth_summary.rowid = params.sne_params.rowid
