@@ -23,9 +23,9 @@ _OUT_FILE = os.path.join(_SN_DIR, _OUT_TABLE + '.db')
 _VAR_FILE = os.path.join(_SN_DIR, 'sum_variable-31mar.db')
 _VAR_TABLE = 'sn_variability_truth'
 
-_OUT_COLUMNS = [('id', 'TEXT'), ('obsHistID', 'BIGINT'), ('MJD', 'DOUBLE'),
-                ('bandpass', 'TEXT'), ('delta_flux', 'FLOAT'),
-                ('id_int', 'BIGINT')]
+_OUT_COLUMNS = [('id_string', 'TEXT'), ('obsHistID', 'BIGINT'),
+                ('MJD', 'DOUBLE'), ('bandpass', 'TEXT'),
+                ('delta_flux', 'FLOAT'), ('id', 'BIGINT')]
 
 class SnVariabilityWriter:
     def __init__(self, summ_file=_SUMM_FILE, out_file=_OUT_FILE,
@@ -47,9 +47,9 @@ class SnVariabilityWriter:
         read_conn.execute(attach_q)
 
         select_columns = (f'{_VAR_TABLE}.id', 'obsHistID', 'MJD',
-                          'bandpass', 'delta_flux', 'id_int')
+                          'bandpass', 'delta_flux', f'{_SUMM_TABLE}.id')
         table_spec = f'{_SUMM_TABLE} INNER JOIN var.{_VAR_TABLE} ON '
-        table_spec += f'{_SUMM_TABLE}.id = var.{_VAR_TABLE}.id'
+        table_spec += f'{_SUMM_TABLE}.id_string = var.{_VAR_TABLE}.id'
         select_q = 'SELECT ' + ','.join(select_columns) + ' from '
         select_q += table_spec
 
