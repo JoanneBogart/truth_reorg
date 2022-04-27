@@ -1,0 +1,11 @@
+For sn and star summary tables:
+
+create index radec_ix on truth_<src_type>_summary(ra,dec);
+
+For sn variability table
+
+create index snid_ix on truth_sn_variability(id);
+
+For star variability table
+create index id_idx on truth_star_variability(id);
+create index obsHistID_idx on truth_star_variability_truth(obsHistID);
